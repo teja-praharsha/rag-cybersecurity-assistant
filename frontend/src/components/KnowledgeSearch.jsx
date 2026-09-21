@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { searchKnowledgeBase } from "../services/api";
 
-const SUGGESTIONS = [
+const SEARCH_CHIPS = [
   "DDoS mitigation",
   "PortScan detection",
-  "NIST incident response",
+  "NIST CSF response",
   "OWASP Top 10",
-  "MITRE ATT&CK lateral movement",
+  "MITRE ATT&CK techniques",
+  "Containment protocol",
 ];
 
 export default function KnowledgeSearch() {
@@ -14,55 +15,71 @@ export default function KnowledgeSearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [error, setError] = useState(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
+  const inputRef = useRef(null);
 
-  const handleSearch = async (searchQuery) => {
-    const q = (searchQuery ?? query).trim();
+  // Global hotkey '/' to focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "/" && document.activeElement !== inputRef.current) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleSearch = async (searchTerm) => {
+    const q = (searchTerm ?? query).trim();
     if (!q) return;
     setLoading(true);
-    setError(null);
     setSearched(true);
     try {
       const data = await searchKnowledgeBase(q, 4);
       setResults(data.results || []);
     } catch (err) {
-      setError(err.message || "Search request failed");
+      console.error(err);
       setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+  const copySnippet = (snippet, idx) => {
+    navigator.clipboard.writeText(snippet);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 1800);
   };
 
   return (
-    <div className="card search-card">
-      <div className="card-header">
-        <div className="card-title-row">
-          <h3>Knowledge Base RAG Search</h3>
-          <span className="info-tag tfidf-tag">TF-IDF Index</span>
+    <section className="cyber-card search-hub-section">
+      <div className="card-top-bar">
+        <div>
+          <h2 className="card-heading">Knowledge Base RAG Explorer</h2>
+          <p className="card-subheading">
+            Semantic search across MITRE ATT&amp;CK, NIST CSF, CISA, OWASP, and Incident Playbooks
+          </p>
         </div>
-        <p>Query curated advisory notes from MITRE ATT&amp;CK, NIST, CISA, OWASP, and SOC Playbooks.</p>
+        <span className="meta-chip">TF-IDF Vector Space</span>
       </div>
 
-      <div className="search-bar-row">
-        <div className="search-input-wrapper">
-          <span className="search-input-icon">🔍</span>
-          <input
-            type="text"
-            className="search-input"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="e.g. DDoS containment, port scan response, NIST CSF steps..."
-          />
-        </div>
+      {/* Modern Search Bar with Shortcut Tag */}
+      <div className="search-input-shell">
+        <span className="search-icon">🔍</span>
+        <input
+          ref={inputRef}
+          type="text"
+          className="search-field"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Search cybersecurity playbooks, CVE mitigations, MITRE ATT&CK techniques..."
+        />
+        <span className="search-kbd-tag" title="Press / anywhere to focus">/</span>
         <button
-          className="btn btn-primary"
+          type="button"
+          className="search-action-btn"
           onClick={() => handleSearch()}
           disabled={loading || !query.trim()}
         >
@@ -70,41 +87,56 @@ export default function KnowledgeSearch() {
         </button>
       </div>
 
-      <div className="search-chips">
-        <span className="chips-label">Suggestions:</span>
-        {SUGGESTIONS.map((tag) => (
+      {/* Quick Search Filter Chips */}
+      <div className="search-chips-row">
+        <span className="chips-title">Frequent queries:</span>
+        {SEARCH_CHIPS.map((chip) => (
           <button
-            key={tag}
-            className="search-chip"
+            key={chip}
+            type="button"
+            className="chip-tag-btn"
             onClick={() => {
-              setQuery(tag);
-              handleSearch(tag);
+              setQuery(chip);
+              handleSearch(chip);
             }}
           >
-            {tag}
+            {chip}
           </button>
         ))}
       </div>
 
-      {error && <div className="error-banner">{error}</div>}
-
+      {/* Results Grid */}
       {searched && (
-        <div className="search-results-list">
+        <div className="search-results-grid">
           {results.length === 0 && !loading && (
-            <p className="empty-notice">No relevant knowledge documents found for "{query}".</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "12px", gridColumn: "1 / -1" }}>
+              No document matches found for "{query}".
+            </p>
           )}
 
-          {results.map((r, idx) => (
-            <div key={idx} className="search-result-item">
-              <div className="search-result-header">
-                <span className="result-doc-name">{r.source}</span>
-                <span className="result-score">Relevance: {(r.score * 100).toFixed(1)}%</span>
+          {results.map((res, idx) => (
+            <div key={idx} className="search-result-card">
+              <div className="search-result-meta">
+                <span className="search-result-title">📄 {res.source}</span>
+                <span className="search-result-score">
+                  {(res.score * 100).toFixed(1)}% match
+                </span>
               </div>
-              <p className="result-snippet">{r.snippet}</p>
+              <p className="search-result-snippet">{res.snippet}</p>
+              <div style={{ marginTop: "auto", paddingTop: "6px" }}>
+                <button
+                  type="button"
+                  className="header-action-btn"
+                  style={{ padding: "4px 10px", fontSize: "10px" }}
+                  onClick={() => copySnippet(res.snippet, idx)}
+                >
+                  {copiedIdx === idx ? "✓ Copied" : "Copy Snippet"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -1,58 +1,67 @@
 import React from "react";
 
-export default function FlowControls({ onSelectDemo, activeLabel, loading }) {
+export default function FlowControls({ activeLabel, onSelectDemo, onOpenInspector, loading }) {
   const flows = [
     {
       id: "DDoS",
-      title: "DDoS Flow",
-      badge: "High Volumetric",
-      badgeClass: "badge-critical",
-      desc: "SYN flood / TCP volumetric pattern with port 80 target.",
+      key: "1",
+      name: "DDoS Flood Flow",
+      tag: "Critical",
+      tagClass: "tag-critical",
+      hint: "High-volume SYN flood pattern with port 80 target",
     },
     {
       id: "PortScan",
-      title: "PortScan Flow",
-      badge: "Reconnaissance",
-      badgeClass: "badge-high",
-      desc: "Sequential port probing and banner discovery signatures.",
+      key: "2",
+      name: "PortScan Probing",
+      tag: "Recon",
+      tagClass: "tag-warning",
+      hint: "Rapid sequential port probing and banner discovery",
     },
     {
       id: "BENIGN",
-      title: "Benign Flow",
-      badge: "Normal Traffic",
-      badgeClass: "badge-safe",
-      desc: "Standard HTTPS/DNS flow metrics with regular packet intervals.",
+      key: "3",
+      name: "Clean Benign Flow",
+      tag: "Safe",
+      tagClass: "tag-safe",
+      hint: "Standard enterprise HTTPS flow with normal IAT timing",
     },
   ];
 
   return (
-    <div className="card controls-card">
-      <div className="card-header">
-        <div className="card-title-row">
-          <h3>Network Flow Ingestion</h3>
-          <span className="info-tag">CIC-IDS2017 Samples</span>
+    <div className="command-bar" role="toolbar" aria-label="Ingestion Command Bar">
+      <div className="command-bar-left">
+        <span className="command-bar-label">Ingest Flow</span>
+        <div className="flow-pills-group">
+          {flows.map((flow) => {
+            const isActive = activeLabel === flow.id;
+            return (
+              <button
+                key={flow.id}
+                type="button"
+                className={`flow-select-pill ${isActive ? "active-pill" : ""}`}
+                onClick={() => onSelectDemo(flow.id)}
+                disabled={loading}
+                title={`${flow.hint} (Press ${flow.key})`}
+              >
+                <span className="flow-key-tag">[{flow.key}]</span>
+                <span className="flow-pill-name">{flow.name}</span>
+                <span className={`flow-pill-tag ${flow.tagClass}`}>{flow.tag}</span>
+              </button>
+            );
+          })}
         </div>
-        <p>Trigger pre-packaged real network flow vectors to test the Random Forest &amp; RAG pipeline.</p>
       </div>
 
-      <div className="flow-buttons-grid">
-        {flows.map((flow) => {
-          const isActive = activeLabel === flow.id;
-          return (
-            <button
-              key={flow.id}
-              className={`flow-btn ${isActive ? "flow-btn-active" : ""}`}
-              onClick={() => onSelectDemo(flow.id)}
-              disabled={loading}
-            >
-              <div className="flow-btn-top">
-                <span className="flow-btn-title">{flow.title}</span>
-                <span className={`flow-btn-badge ${flow.badgeClass}`}>{flow.badge}</span>
-              </div>
-              <p className="flow-btn-desc">{flow.desc}</p>
-            </button>
-          );
-        })}
+      <div className="command-bar-right">
+        <button
+          type="button"
+          className="btn-ghost-cyan"
+          onClick={onOpenInspector}
+          title="Inspect and live-edit the 78 CIC-IDS2017 flow metrics"
+        >
+          <span>⚙️ Inspect / Simulate Flow</span>
+        </button>
       </div>
     </div>
   );

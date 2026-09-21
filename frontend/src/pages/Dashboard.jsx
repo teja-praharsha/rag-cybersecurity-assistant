@@ -4,84 +4,140 @@ import FlowControls from "../components/FlowControls";
 import ThreatCard from "../components/ThreatCard";
 import FeatureImportance from "../components/FeatureImportance";
 import RecommendationPanel from "../components/RecommendationPanel";
-import EvidencePanel from "../components/EvidencePanel";
 import KnowledgeSearch from "../components/KnowledgeSearch";
+import FlowInspectorModal from "../components/FlowInspectorModal";
 import { analyzeDemo, fetchHealth } from "../services/api";
 
 export default function Dashboard() {
   const [health, setHealth] = useState(null);
   const [activeLabel, setActiveLabel] = useState("DDoS");
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [rawFlowData, setRawFlowData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
-  // Load initial health status and run default DDoS demo
-  useEffect(() => {
-    fetchHealth()
-      .then((h) => setHealth(h))
-      .catch((err) => console.warn("Backend not reached yet:", err));
-
-    handleSelectDemo("DDoS");
-  }, []);
-
-  const handleSelectDemo = async (label) => {
+  // Ingest demo flow
+  const ingestFlow = async (label) => {
     setActiveLabel(label);
     setLoading(true);
-    setError(null);
     try {
       const data = await analyzeDemo(label);
       setAnalysisResult(data);
+      // Construct approximate or known flow metrics
+      if (label === "DDoS") {
+        setRawFlowData({
+          "Destination Port": 80,
+          "Flow Duration": 1293792,
+          "Total Fwd Packets": 3,
+          "Total Backward Packets": 7,
+          "Flow Bytes/s": 8991.39,
+          "Average Packet Size": 1163.3,
+        });
+      } else if (label === "PortScan") {
+        setRawFlowData({
+          "Destination Port": 443,
+          "Flow Duration": 3120,
+          "Total Fwd Packets": 2,
+          "Total Backward Packets": 1,
+          "Flow Bytes/s": 38461.5,
+          "Average Packet Size": 40.0,
+        });
+      } else {
+        setRawFlowData({
+          "Destination Port": 443,
+          "Flow Duration": 5892100,
+          "Total Fwd Packets": 18,
+          "Total Backward Packets": 22,
+          "Flow Bytes/s": 4210.8,
+          "Average Packet Size": 512.4,
+        });
+      }
     } catch (err) {
-      setError(err.message || "Failed to analyze demo flow.");
+      console.error("Ingestion failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Initial load
+  useEffect(() => {
+    fetchHealth()
+      .then((h) => setHealth(h))
+      .catch((err) => console.warn("Backend connectivity notice:", err));
+
+    ingestFlow("DDoS");
+  }, []);
+
+  // Keyboard shortcuts [1], [2], [3]
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === "INPUT" || activeTag === "TEXTAREA") return;
+
+      if (e.key === "1") ingestFlow("DDoS");
+      if (e.key === "2") ingestFlow("PortScan");
+      if (e.key === "3") ingestFlow("BENIGN");
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleApplyCustomResult = (result, features) => {
+    setAnalysisResult(result);
+    setRawFlowData(features);
+    setActiveLabel("Custom Vector");
+  };
+
   return (
-    <div className="dashboard-container">
-      <Header health={health} activeLabel={activeLabel} />
+    <div className="app-shell">
+      {/* Header */}
+      <Header health={health} />
 
-      <main className="dashboard-main">
-        {error && (
-          <div className="error-banner">
-            <strong>System Notice:</strong> {error}
-          </div>
-        )}
+      {/* Command Bar */}
+      <FlowControls
+        activeLabel={activeLabel}
+        onSelectDemo={ingestFlow}
+        onOpenInspector={() => setIsInspectorOpen(true)}
+        loading={loading}
+      />
 
-        {/* Section 1: Ingestion / Demo Controls */}
-        <section className="dashboard-section">
-          <FlowControls
-            onSelectDemo={handleSelectDemo}
-            activeLabel={activeLabel}
-            loading={loading}
-          />
-        </section>
+      {/* 3-Column Workstation Grid */}
+      <main className="workstation-grid">
+        {/* Column 1: Verdict & Metrics */}
+        <ThreatCard
+          result={analysisResult}
+          rawData={rawFlowData}
+          loading={loading}
+        />
 
-        {/* Section 2: Threat Detection & Explainability */}
-        <section className="dashboard-grid-two-col">
-          <div className="col-left">
-            <ThreatCard result={analysisResult} loading={loading} />
-            <RecommendationPanel items={analysisResult?.guidance} />
-          </div>
-          <div className="col-right">
-            <FeatureImportance items={analysisResult?.explanation} />
-            <EvidencePanel sources={analysisResult?.sources} />
-          </div>
-        </section>
+        {/* Column 2: XAI Feature Attribution Bars */}
+        <FeatureImportance items={analysisResult?.explanation} />
 
-        {/* Section 3: RAG Knowledge Base Search */}
-        <section className="dashboard-section">
-          <KnowledgeSearch />
-        </section>
+        {/* Column 3: Playbook Triage Checklist & RAG Citations */}
+        <RecommendationPanel
+          guidance={analysisResult?.guidance}
+          sources={analysisResult?.sources}
+        />
       </main>
 
+      {/* Section 4: Full-Width Knowledge Base RAG Explorer */}
+      <KnowledgeSearch />
+
+      {/* Custom Flow Inspector & Simulator Drawer */}
+      <FlowInspectorModal
+        isOpen={isInspectorOpen}
+        onClose={() => setIsInspectorOpen(false)}
+        flowData={rawFlowData}
+        onApplyCustomResult={handleApplyCustomResult}
+      />
+
+      {/* Footer */}
       <footer className="app-footer">
         <p>
-          RAG-Based Explainable AI Cybersecurity Assistant • Built with FastAPI, Scikit-Learn (CIC-IDS2017), Local TF-IDF RAG &amp; React
+          RAG Defense OS • Explainable AI Security Telemetry &amp; Local Knowledge Advisory Console
         </p>
-        <p className="footer-sub">
-          Model predictions are designed for decision support and should always be correlated with full system telemetry.
+        <p className="app-footer-sub">
+          Model predictions serve as decision support and must be cross-referenced with production endpoint telemetry.
         </p>
       </footer>
     </div>

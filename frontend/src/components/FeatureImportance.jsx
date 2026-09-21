@@ -3,47 +3,45 @@ import React from "react";
 export default function FeatureImportance({ items = [] }) {
   if (!items || items.length === 0) {
     return (
-      <div className="card feature-card">
-        <div className="card-header">
-          <h3>Feature Importance (XAI)</h3>
-          <p>Global Gini impurity importance of network flow characteristics.</p>
-        </div>
-        <p className="empty-notice">No feature attributions available for this prediction.</p>
+      <div className="cyber-card" style={{ minHeight: "340px", justifyContent: "center", alignItems: "center" }}>
+        <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>No feature importances available.</p>
       </div>
     );
   }
 
-  // Find maximum percentage to scale bars cleanly
+  // Calculate highest percentage for visual scaling
   const maxPct = Math.max(...items.map((i) => i.percentage || 0), 10);
 
   return (
-    <div className="card feature-card">
-      <div className="card-header">
-        <div className="card-title-row">
-          <h3>Feature Importance (XAI)</h3>
-          <span className="info-tag">Top {items.length} Attributes</span>
+    <div className="cyber-card">
+      <div className="card-top-bar">
+        <div>
+          <h2 className="card-heading">Explainable AI (XAI) Attributions</h2>
+          <p className="card-subheading">Network-flow features driving Random Forest classification</p>
         </div>
-        <p>Key network-flow signatures driving the model's classification decision.</p>
+        <span className="meta-chip">Gini Criterion</span>
       </div>
 
-      <div className="feature-list">
+      <div className="xai-features-container">
         {items.map((item, idx) => {
-          const widthPct = Math.min(100, (item.percentage / maxPct) * 100);
+          const widthRatio = Math.min(100, (item.percentage / maxPct) * 100);
           return (
-            <div key={item.feature || idx} className="feature-row">
-              <div className="feature-label-group">
-                <span className="feature-rank">#{idx + 1}</span>
-                <span className="feature-name" title={item.feature}>
+            <div key={item.feature || idx} className="xai-row">
+              <div className="xai-label-box">
+                <span className="xai-rank-num">0{idx + 1}</span>
+                <span className="xai-feature-name" title={item.feature}>
                   {item.feature}
                 </span>
               </div>
-              <div className="bar-track">
+
+              <div className="xai-bar-track">
                 <div
-                  className="bar-fill"
-                  style={{ width: `${widthPct}%` }}
+                  className="xai-bar-fill"
+                  style={{ width: `${widthRatio}%` }}
                 ></div>
               </div>
-              <span className="feature-percentage">{item.percentage}%</span>
+
+              <span className="xai-percentage-badge">{item.percentage}%</span>
             </div>
           );
         })}

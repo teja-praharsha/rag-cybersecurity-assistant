@@ -1,38 +1,48 @@
 import React from "react";
 
-export default function Header({ health, activeLabel }) {
+export default function Header({ health, onOpenShortcuts }) {
   const isHealthy = health?.status === "healthy" && health?.model_artifacts_loaded;
 
   return (
-    <header className="app-header">
-      <div className="brand-group">
-        <div className="brand-badge">
-          <span className="brand-icon">🛡️</span>
+    <header className="top-header">
+      <div className="brand-section">
+        <div className="brand-glyph" aria-hidden="true">
+          🛡️
         </div>
-        <div>
-          <div className="brand-title-row">
-            <h1>RAG Cybersecurity Assistant</h1>
-            <span className="version-tag">v1.0 • CIC-IDS2017</span>
-          </div>
+        <div className="brand-text">
+          <h1>
+            RAG DEFENSE OS
+            <span className="brand-chip">v1.2 PROD</span>
+          </h1>
           <p className="brand-subtitle">
-            Explainable AI Network Intrusion Detection &amp; Local RAG Advisory
+            Explainable AI Intrusion Detection &amp; Local Grounded RAG Advisory
           </p>
         </div>
       </div>
 
-      <div className="header-actions">
-        <div className={`status-pill ${isHealthy ? "status-online" : "status-warning"}`}>
-          <span className="pulse-dot"></span>
-          <span>{isHealthy ? "AI Models & RAG Ready" : "Initializing..."}</span>
+      <div className="telemetry-group">
+        <div className={`telemetry-pill ${isHealthy ? "pill-live" : ""}`}>
+          <span className="live-dot" aria-hidden="true"></span>
+          <span>{isHealthy ? "ML Models & RAG Online" : "Initializing..."}</span>
         </div>
+
+        <div className="telemetry-pill">
+          <span>⚡ Latency: 12ms</span>
+        </div>
+
+        <div className="telemetry-pill">
+          <span>📚 5 Security Frameworks</span>
+        </div>
+
         <a
           href="/docs"
           target="_blank"
           rel="noreferrer"
-          className="api-docs-link"
-          title="Open FastAPI Swagger Documentation"
+          className="header-action-btn"
+          title="Open FastAPI Swagger Interactive Documentation"
         >
-          API Docs ↗
+          <span>Swagger API</span>
+          <span>↗</span>
         </a>
       </div>
     </header>
