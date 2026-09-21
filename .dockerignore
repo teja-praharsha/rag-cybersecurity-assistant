@@ -1,0 +1,25 @@
+# Git & IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Virtual Environment & Python Cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+
+# Frontend Dev Files
+frontend/node_modules/
+frontend/.vite/
+npm-debug.log*
+
+# Large Datasets (exclude ~800MB raw dataset from Docker image)
+data/raw/
+data/processed/
+*.csv

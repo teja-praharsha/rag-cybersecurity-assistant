@@ -1,0 +1,41 @@
+# Python virtual environments & bytecode
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+.env.local
+*.local
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Node & Frontend
+frontend/node_modules/
+frontend/.vite/
+frontend/.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Large Datasets (Exceeds GitHub 100MB limit)
+# Note: Raw CIC-IDS2017 CSVs are ~800MB and must not be pushed to GitHub.
+# See data/raw/README.md for dataset download instructions.
+data/raw/*.csv
+data/raw/**/*.csv
+data/processed/*.csv
+*.csv
+
+# OS & IDE metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
